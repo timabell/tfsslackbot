@@ -2,6 +2,8 @@
 
 A quick and dirty TFS [Slack](http://slack.com/) bot. Its quite rushed as it was done between work. It does, however, get the job done.
 
+![Screenshot](screenshot.png)
+
 ## Installation
 
 Open up SlackBotService.exe.config and make the following edits:
