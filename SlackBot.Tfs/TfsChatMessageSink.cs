@@ -59,6 +59,10 @@ namespace SlackBot.Tfs
             _teamProjectCollectionGuid = _teamProjectCollection.InstanceId;
             _teamProjectCollection.Connect(ConnectOptions.IncludeServices);
             _wis = _teamProjectCollection.GetService<WorkItemStore>();
+            if (_wis == null)
+            {
+                throw new Exception("_teamProjectCollection.GetService<WorkItemStore>() returned null");
+            }
 
             _tswaHyperlink = _teamProjectCollection.GetService<TswaClientHyperlinkService>();
         }
