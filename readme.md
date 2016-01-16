@@ -19,8 +19,13 @@ Open up an elevated command prompt and `cd` to the directory, then run:
     installutil /i slackbotservice.exe
     net start slackbotservice
 
-Make sure you use an account with access to TFS for the service account. Keep an eye on the Windows event log the first time you run it: it 
-will report status and errors there. Invite your bot to a room and type in a TFS item (e.g. tfs123456).
+Make sure you use an account with access to TFS for the service account. Keep
+an eye on the Windows event log the first time you run it: it will report
+status and errors there. Invite your bot to a room and type in a TFS item (e.g.
+tfs123456).
+
+Note that when `installutil` prompts for the username you need to put
+`.\username` ([more info](http://stackoverflow.com/a/2205777/10245))
 
 This stuff is beyond alpha so you may need to restart it from time to time.
 
