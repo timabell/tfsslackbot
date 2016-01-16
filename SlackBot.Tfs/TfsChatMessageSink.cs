@@ -77,6 +77,10 @@ namespace SlackBot.Tfs
         {
             await Task.Delay(0);
 
+            if (_wis == null)
+            {
+                throw new InvalidOperationException("WorkItemStore is null");
+            }
             var attachments = new List<Attachment>();
             var matches = Pattern.Matches(message.Text);
             foreach (var id in matches.OfType<Match>().Where(x => x.Success).Select(x => x.Groups["id"]).Where(x => x.Success).Select(x => x.Value))
