@@ -9,9 +9,11 @@ A quick and dirty TFS [Slack](http://slack.com/) bot. Its quite rushed as it was
 Open up SlackBotService.exe.config and make the following edits:
 
  * `<client token="" />`
-   * Put your slack bot integration token into the token attribute.
+   * Put your [slack bot integration token](https://api.slack.com/bot-users)
+     into the token attribute.
  * `<add name="tfs" projectCollection="" project=""/>`
-   * Put your project collection into the projectCollection attribute:  (e.g. `http://mytfs:8080/tfs/MyCollection`)
+   * Put your project collection into the projectCollection attribute:  (e.g.
+     `http://mytfs:8080/tfs/MyCollection`)
    * Fill in the project attribute.
 
 Open up an elevated command prompt and `cd` to the directory, then run:
