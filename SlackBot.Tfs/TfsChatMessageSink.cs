@@ -65,7 +65,11 @@ namespace SlackBot.Tfs
             //}
 
             //_tswaHyperlink = _teamProjectCollection.GetService<TswaClientHyperlinkService>();
-            var connection = new VssConnection(new Uri(element.ProjectCollection), new VssCredentials());
+
+            // todo: support other auth methods, see the auth samples in https://www.visualstudio.com/en-us/integrate/get-started/client-libraries/samples
+            //var vssCredentials = new VssCredentials(); // Active directory auth - NTLM against a Team Foundation Server
+            var vssCredentials = new VssClientCredentials(); // Visual Studio sign-in prompt
+            var connection = new VssConnection(new Uri(element.ProjectCollection), vssCredentials);
             _witClient = connection.GetClient<WorkItemTrackingHttpClient>();
         }
 
