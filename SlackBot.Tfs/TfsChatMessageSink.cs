@@ -1,8 +1,4 @@
-﻿using Microsoft.TeamFoundation.Client;
-using Microsoft.TeamFoundation.Framework.Client;
-using Microsoft.TeamFoundation.Framework.Common;
-using Microsoft.TeamFoundation.WorkItemTracking.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +6,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Client;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace SlackBot.Tfs
 {
@@ -27,11 +27,12 @@ namespace SlackBot.Tfs
 
         private static readonly Regex Pattern = new Regex("(^|\\b)tfs(?<id>[0-9]+)", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-        private TfsTeamProjectCollection _teamProjectCollection;
-        private Guid _teamProjectCollectionGuid;
-        private TeamFoundationServer _tfs;
-        private WorkItemStore _wis;
-        private TswaClientHyperlinkService _tswaHyperlink;
+        //private TfsTeamProjectCollection _teamProjectCollection;
+        //private Guid _teamProjectCollectionGuid;
+        //private TeamFoundationServer _tfs;
+        //private WorkItemStore _wis;
+        //private TswaClientHyperlinkService _tswaHyperlink;
+        private WorkItemTrackingHttpClient _witClient;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TfsChatMessageSink"/> class.
@@ -49,22 +50,23 @@ namespace SlackBot.Tfs
         /// <returns>
         /// A <see cref="Task" /> that represents the asynchronous initialize operation.
         /// </returns>
-        /// <exception cref="System.NotImplementedException"></exception>
         public async Task InitializeAsync(string name, CancellationToken cancellationToken = default(CancellationToken))
         {
             await Task.Delay(0);
 
             var element = Configuration.TfsConfigurationSection.Current.Sinks[name];
-            _teamProjectCollection = new TfsTeamProjectCollection(new Uri(element.ProjectCollection));
-            _teamProjectCollectionGuid = _teamProjectCollection.InstanceId;
-            _teamProjectCollection.Connect(ConnectOptions.IncludeServices);
-            _wis = _teamProjectCollection.GetService<WorkItemStore>();
-            if (_wis == null)
-            {
-                throw new Exception("_teamProjectCollection.GetService<WorkItemStore>() returned null");
-            }
+            //_teamProjectCollection = new TfsTeamProjectCollection(new Uri(element.ProjectCollection));
+            //_teamProjectCollectionGuid = _teamProjectCollection.InstanceId;
+            //_teamProjectCollection.Connect(ConnectOptions.IncludeServices);
+            //_wis = _teamProjectCollection.GetService<WorkItemStore>();
+            //if (_wis == null)
+            //{
+            //    throw new Exception("_teamProjectCollection.GetService<WorkItemStore>() returned null");
+            //}
 
-            _tswaHyperlink = _teamProjectCollection.GetService<TswaClientHyperlinkService>();
+            //_tswaHyperlink = _teamProjectCollection.GetService<TswaClientHyperlinkService>();
+            var connection = new VssConnection(new Uri(element.ProjectCollection), new VssCredentials());
+            _witClient = connection.GetClient<WorkItemTrackingHttpClient>();
         }
 
         /// <summary>
@@ -76,15 +78,15 @@ namespace SlackBot.Tfs
         /// <returns>
         /// A <see cref="Task{ChatMessageSinkResult}" /> that represents the asynchronous process operation.
         /// </returns>
-        /// <exception cref="System.NotImplementedException"></exception>
         public async Task<ChatMessageSinkResult> ProcessMessageAsync(ISlack slack, Message message, CancellationToken cancellationToken = default(CancellationToken))
         {
+            if (_witClient == null)
+            {
+                throw new InvalidOperationException("WorkItem Client is null");
+            }
+
             await Task.Delay(0);
 
-            if (_wis == null)
-            {
-                throw new InvalidOperationException("WorkItemStore is null");
-            }
             var attachments = new List<Attachment>();
             var matches = Pattern.Matches(message.Text);
             foreach (var id in matches.OfType<Match>().Where(x => x.Success).Select(x => x.Groups["id"]).Where(x => x.Success).Select(x => x.Value))
@@ -92,27 +94,31 @@ namespace SlackBot.Tfs
                 WorkItem wi;
                 try
                 {
-                    wi = _wis.GetWorkItem(XmlConvert.ToInt32(id));
+                    // todo: use get all at once
+                    wi = await _witClient.GetWorkItemAsync(XmlConvert.ToInt32(id));
 
                 }
                 catch (Exception e)
                 {
+                    // todo: at least log what happened
                     continue;
                 }
 
-                var link = _tswaHyperlink.GetWorkItemEditorUrl(wi.Id);
 
                 var fields = new List<AttachmentField>()
                     {
-                        new AttachmentField("Assigned To", Convert.ToString(wi[CoreField.AssignedTo]), true),
-                        new AttachmentField("State", wi.State, true),
+                        new AttachmentField("Assigned To", Convert.ToString(wi.Fields["AssignedTo"]), true),
+                        new AttachmentField("State", wi.Fields["State"].ToString(), true),
                     };
 
+                var link = wi.Url;
+                var wiType = wi.Fields["System.Type"].ToString();
+                var wiTitle = wi.Fields["System.Title"].ToString();
                 string color;
-                _colors.TryGetValue(wi.Type.Name, out color);
+                _colors.TryGetValue(wiType, out color);
 
-                attachments.Add(new Attachment(string.Format("{0} {1}: {2}", wi.Type, wi.Id, link), color,
-                    text: string.Format("<{0}|{1} {2} {3}>", SlackEscape(link.ToString()), SlackEscape(wi.Type.Name), id, SlackEscape(wi.Title)),
+                attachments.Add(new Attachment(string.Format("{0} {1}: {2}", wiType, wi.Id, link), color,
+                    text: string.Format("<{0}|{1} {2} {3}>", SlackEscape(link), SlackEscape(wiType), id, SlackEscape(wiTitle)),
                     fields: fields));
             }
 
