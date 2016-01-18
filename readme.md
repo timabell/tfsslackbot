@@ -31,7 +31,7 @@ Note that when `installutil` prompts for the username you need to put
 
 This stuff is beyond alpha so you may need to restart it from time to time.
 
-### Getting started
+### Contributing
 
 **Getting started with Git and GitHub**
 
