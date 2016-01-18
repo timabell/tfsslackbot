@@ -102,10 +102,16 @@ namespace SlackBot.Tfs
                     wi = await _witClient.GetWorkItemAsync(XmlConvert.ToInt32(id));
 
                 }
-                catch (Exception e)
+                catch (VssServiceException ex)
                 {
-                    // todo: at least log what happened
-                    continue;
+                    // Ignore items that don't exist
+                    // "TF401232: Work item 1 does not exist, or you do not have permissions to read it."
+                    if (ex.Message.StartsWith("TF401232:"))
+                    {
+                        // todo: show in slack that it's not found
+                        continue;
+                    }
+                    throw;
                 }
 
 
