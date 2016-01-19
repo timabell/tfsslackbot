@@ -98,9 +98,8 @@ namespace SlackBot.Tfs
                 WorkItem wi;
                 try
                 {
-                    // todo: use get all at once
+                    // todo: get all at once
                     wi = await _witClient.GetWorkItemAsync(XmlConvert.ToInt32(id));
-
                 }
                 catch (VssServiceException ex)
                 {
@@ -114,22 +113,7 @@ namespace SlackBot.Tfs
                     throw;
                 }
 
-
-                var fields = new List<AttachmentField>()
-                    {
-                        new AttachmentField("Assigned To", Convert.ToString(wi.Fields["AssignedTo"]), true),
-                        new AttachmentField("State", wi.Fields["State"].ToString(), true),
-                    };
-
-                var link = wi.Url;
-                var wiType = wi.Fields["System.Type"].ToString();
-                var wiTitle = wi.Fields["System.Title"].ToString();
-                string color;
-                _colors.TryGetValue(wiType, out color);
-
-                attachments.Add(new Attachment(string.Format("{0} {1}: {2}", wiType, wi.Id, link), color,
-                    text: string.Format("<{0}|{1} {2} {3}>", SlackEscape(link), SlackEscape(wiType), id, SlackEscape(wiTitle)),
-                    fields: fields));
+                attachments.Add(WorkItemToAttachment(wi));
             }
 
             if (attachments.Any())
@@ -139,6 +123,49 @@ namespace SlackBot.Tfs
             }
 
             return ChatMessageSinkResult.Continue;
+        }
+
+        private static Attachment WorkItemToAttachment(WorkItem wi)
+        {
+            var fields = new List<AttachmentField>();
+            //AddField(fields, wi, "System.AssignedTo", "Assigned To");
+            AddField(fields, wi, "System.State", "State");
+
+            var link = wi.Url;
+            var wiType = "type-todo";// todo
+            //var wiType = GetField(wi, "System.Type");
+            var wiTitle = GetField(wi, "System.Title");
+
+            string color;
+            _colors.TryGetValue(wiType, out color);
+
+            var attachment = new Attachment(string.Format("{0} {1}: {2}", wiType, wi.Id, link), color,
+                text: string.Format("<{0}|{1} {2} {3}>", SlackEscape(link), SlackEscape(wiType), wi.Id, SlackEscape(wiTitle)),
+                fields: fields);
+            return attachment;
+        }
+
+        private static void AddField(List<AttachmentField> fields, WorkItem wi, string name, string displayName, bool isShort = true)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = name;
+            }
+            var value = GetField(wi, name);
+            fields.Add(new AttachmentField(displayName, value, isShort));
+        }
+
+        private static string GetField(WorkItem wi, string name)
+        {
+            if (!wi.Fields.ContainsKey(name))
+            {
+                throw new Exception(string.Format("Field '{0}' was not returned by TFS", name));
+            }
+            return wi.Fields[name].ToString();
         }
 
         private static string SlackEscape(string val)
