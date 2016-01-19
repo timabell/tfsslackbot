@@ -93,8 +93,8 @@ namespace SlackBot.Tfs
                     // "TF401232: Work item 1 does not exist, or you do not have permissions to read it."
                     if (ex.Message.StartsWith("TF401232:"))
                     {
-                        // todo: show in slack that it's not found
-                        continue;
+                        await slack.SendAsync(message.CreateReply(string.Format("WorkItem {0} not found", id)));
+                        return ChatMessageSinkResult.Complete;
                     }
                     throw;
                 }
