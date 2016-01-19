@@ -132,7 +132,7 @@ namespace SlackBot.Tfs
         private static Attachment WorkItemToAttachment(WorkItem wi)
         {
             var fields = new List<AttachmentField>();
-            //AddField(fields, wi, "System.AssignedTo", "Assigned To");
+            //AddField(fields, wi, "System.AssignedTo", "Assigned To"); // not available in the response
             AddField(fields, wi, "System.State", "State");
 
             //var apiUrl = wi.Url; // useful for seeing the raw json
