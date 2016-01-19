@@ -10,6 +10,7 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Client;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 
 namespace SlackBot.Tfs
 {
@@ -134,10 +135,10 @@ namespace SlackBot.Tfs
             //AddField(fields, wi, "System.AssignedTo", "Assigned To");
             AddField(fields, wi, "System.State", "State");
 
-            var link = wi.Url;
-            var wiType = "type-todo";// todo
-            //var wiType = GetField(wi, "System.Type");
+            //var apiUrl = wi.Url; // useful for seeing the raw json
+            var wiType = GetField(wi, "System.WorkItemType");
             var wiTitle = GetField(wi, "System.Title");
+            var link = GetLink(wi, "html");
 
             string color;
             _colors.TryGetValue(wiType, out color);
@@ -146,6 +147,21 @@ namespace SlackBot.Tfs
                 text: string.Format("<{0}|{1} {2} {3}>", SlackEscape(link), SlackEscape(wiType), wi.Id, SlackEscape(wiTitle)),
                 fields: fields);
             return attachment;
+        }
+
+        private static string GetLink(WorkItem wi, string linkName)
+        {
+            if (!wi.Links.Links.ContainsKey(linkName))
+            {
+                throw new Exception(string.Format("Link of type '{0}' not returned from TFS", linkName));
+            }
+            var linkObj = wi.Links.Links[linkName];
+            var referenceLink = linkObj as ReferenceLink;
+            if (referenceLink == null)
+            {
+                throw new Exception(string.Format("Failed to case Link '{0}' to type ReferenceLink", linkName));
+            }
+            return referenceLink.Href;
         }
 
         private static void AddField(List<AttachmentField> fields, WorkItem wi, string name, string displayName, bool isShort = true)
