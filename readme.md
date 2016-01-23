@@ -1,6 +1,10 @@
 # Tim's fork
 
-This fork provides support for Visual Studio Team Services (VSTS, formerly VSO / Visual Studio Online)
+This fork provides support for Visual Studio Team Services (VSTS, formerly VSO
+/ Visual Studio Online)
+
+Download binaries from the [releases
+page](https://github.com/timabell/tfsslackbot/releases)
 
 ## TFS Slack Bot
 
