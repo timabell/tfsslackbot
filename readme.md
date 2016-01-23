@@ -1,3 +1,7 @@
+# Tim's fork
+
+This fork provides support for Visual Studio Team Services (VSTS, formerly VSO / Visual Studio Online)
+
 ## TFS Slack Bot
 
 A quick and dirty TFS [Slack](http://slack.com/) bot. Its quite rushed as it was done between work. It does, however, get the job done.
